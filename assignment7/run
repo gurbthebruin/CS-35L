@@ -1,0 +1,9 @@
+#!/bin/bash 
+
+read -d '' programs
+
+for i in $programs; do 
+	req="/usr/bin/" 
+	req+="$i"
+	ldd "$req"
+done 
