@@ -1,0 +1,99 @@
+#! /bin/bash
+#Gurbir Arora 
+#105178554
+recursive=0 
+dir=.
+dir_rec=0 
+
+#------if statements and case statements---------
+if [ $# -gt 2 ]; then
+    echo "Only up to two argument are allowed"
+    exit
+fi
+#wrong usage or wrong number of arguments?
+if [ "$1" ]; then
+   case "$1" in
+   -r)
+    shift
+    # -r passed? (use shift command here) 
+    recursive=1
+    dir_rec=1
+    ;;
+   -?*)
+    echo 'Invalid Directory name' 
+    exit 1
+    ;;
+    *)
+    dir="$1"
+    ;;
+  esac
+fi
+
+if [ "$1" ] && [ "$dir_rec" == 1 ]
+then
+  dir="$1"
+fi
+
+if [ "$dir" ]; then
+  if [ ! -d "$dir" ]; then
+  	echo 'Invalid Directory Name' 
+  	exit 1
+  elif [ -L "$dir" ]; then 
+	echo 'Symbolic Link!' 
+	exit 1 
+  fi
+fi
+
+set -f
+IFS='
+'
+#else -> run non-recursive block
+if [ "$recursive" == 0 ]; then
+  filenames=$(find "$dir" -maxdepth 1 | \
+grep -v -E '^(.*)\/([a-zA-Z_\n][a-zA-Z._-]{0,13})$|^\.\.$|^\.$') 
+  filesort=$(find "$dir" -maxdepth 1 | sort -f | uniq -iD)
+  combo=$(echo "$filenames" && echo "$filesort")
+  combosort=$(echo "$combo" | sort -u)
+#get all immediate filenames and print the ones that have invalid characters
+  for var in $combosort
+  do
+    if [ -d "$var" ]; then
+       	if [ $var != $dir ]; then
+		echo "$var"/
+	fi 
+    else
+        echo "$var"
+    fi 
+  done
+fi
+#if recursion -> run recursion statement
+if [ "$recursive" == 1 ]; then
+  
+  filenames=$(find "$dir" | \
+grep -v -E '^(.*)\/([a-zA-Z_][a-zA-Z._-]{0,13})$|^\.\.$|^\.$')
+  sorted=
+  for var2 in `find "$dir"`
+  do
+    if [ -d "$var2" ]; then
+      filesort=$(find "$var2" -maxdepth 1 | sort -f | uniq -iD)
+      if [ "$filesort" ]; then    
+         sorted=$(echo "$sorted" && echo "$filesort")
+      fi
+    fi
+  done
+  
+  combo=$(echo "$filenames" && echo "$sorted")
+  combosort=$(echo "$combo" | sort -u)
+  for var1 in $combosort
+  do
+      if [ -d "$var1" ]; then
+        if [ $var1 != $dir ]; then
+	    echo "$var1"/
+	fi 
+      else
+        echo "$var1"
+      fi
+  done
+fi
+
+IFS=''

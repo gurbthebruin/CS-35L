@@ -1,0 +1,115 @@
+Gurbir Arora 
+105178554 
+Use locale to confirm that you're in the standard C 
+If you're not, enter export LC_ALL='C' and enter locale to confirm 
+To create the sorted words file, enter the command:
+ sort -u /usr/share/dict/words > ./words
+If you type cat words, you should see an alphabetically sort list of 
+words run across your screen now create a copt of the assignment's 
+HTML page by entering: wget https://web.cs.ucla.edu/classes/spring20
+/cs35L/assign/assign3.html
+this will create a file names assign3.html
+now, we will enter various commands to see what they do: 
+starting with tr -c 'A-Za-z' '[\n*]' <  assign3.html and hit Enter 
+-this command puts each word on a new line and replaces any character
+ that is not alphabetic with a new line/empty line. By using man tr
+ I was able to see that the -c option means to use the complement of
+ "A-Za-z"
+The next command is tr -cs 'A-Za-z' '[\n*]' <  assign3.html. 
+We can see the difference between this command and the previous one 
+is the "-s", which means to replace as a single occurance instead of
+ a multiline replacement as we saw in the previous output. Unlike the
+ previous command, any consecutive non-alphabets will be replaced with
+ a single new line character (\n)
+Next command is:  tr -cs 'A-Za-z' '[\n*]' < assign3.html | sort
+This command replaces non-alphabet characters with new lines and then
+ it sorts all the remaining words in alphabetical order
+next we have: tr -cs 'A-Za-z' '[\n*]' < assign3.html | sort -u
+This command does exactly what the previous command does, but assures
+ the set of words are unique by getting rid of repeat words 
+tr -cs 'A-Za-z' '[\n*]' < words.html | sort -u | comm - words 
+This command, according to man comm, outputs three columns with the
+ first column containing lines unique to assign3.html, column two 
+having words unique to the words file, and column three having words 
+that appear in both files. 
+tr -cs 'A-Za-z' '[\n*]' < assign3.html | sort -u | comm -23 - words 
+# ENGLISHCHECKER
+This command outputs the same thing as the previous command, but 
+doesn't output columns two or three, hence the addition of "-23" 
+and only outputs column one 
+----------------------------
+Now, use wget https://www.mauimapp.com/moolelo/hwnwdshw.htm to get
+ the words
+ use sed 's/?//g' hwnwdshw.htm to remove every instance
+ of '?'
+ use sed 's/<u>//g' hwnwdshw.htm to remove every instance of
+ '<u>'
+use sed 's/<\/u>//g' hwnwdshw.htm to remove every instance of '</u> 
+use tr '[:upper:]' '[:lower:]' hwnwdshw.htm to make all letters lowercase 
+use sed "s/\`/'/g" hwnwdshw.htm to treat ` (ASCII grave accent) as if 
+it were ' (ASCII apostrophe, which we use to represent ‘okina)
+use sed "s/-/ /g" hwnwdshw.htm to treat "-" as " ".
+use grep ' *<td[^>]*>[pk'mnwlhaeiou ]*</td> *' hwnwdshw.htm to take
+ each remaining line of the form ‘A<tdX>W</td>Z’
+now, to make this a script, I did emacs buildwords and entered all 
+of the commands above but instead of the file name, i put the "|"
+ symbol, saved the file by clicking C-x C-c, then y 
+Then, I gave the user executable permission by typing chmod u+x
+ buildwords. Make sure to add #!/bin/bash to the top of the buildwords
+ file. The commands I used in the buildwords file consist of: 
+sed 's/?//g' |
+sed 's/<u>//g' |
+sed 's/<\/u>//g' |
+tr '[:upper:]' '[:lower:]' |
+sed "s/\`/'/g" |
+sed "s/-/ /g" |
+grep "<td[^>]*>[pk'mnwlhaeiou ]*</td> *" |
+sed 's/<[^>]*>//g' |
+sed 's/^\s*//g' |
+sed 's/ /\n/g' |
+sort -u 
+The only new commands here are the last four, in which 
+"sed 's/<[^>]*>//g' |" removes the HTML brackets from the word 
+and sort -u sorts the result and only includes the set of unique
+ words. The third expression, sed 's/^\s*//g, removes the spaces 
+in the list to make the list a simple word list. The fourth expression
+ sed 's/ /\n/g' puts every word separated by a space on a new line 
+as per the spec. 
+my hwords file consists of 312 words, which I found by doing wc -l hwords. 
+cat hwnwdshw.htm | ./buildwords | less > hwords is the command that
+ I used to put the output in the hwords file
+I used wget https://web.cs.ucla.edu/classes/spring20/
+cs35L/assign/assign3.html in order to get the file that I would 
+test my HAWAIIANCHECKER on. 
+Using ENGLISHCHECKER, I used tr -cs 'A-Za-z' '[\n*]' < assign3.html | 
+sort -u | comm -23 - words | wc -w  to check the number of misspelled 
+words and got 104 
+Using HAWAIIANCHECKER, I used cat assign3.html | tr '[:upper:]' 
+'[:lower:]' | tr -cs "'A-Za-z" '[\n*]' | sort -u | comm -23 - hwords |
+ wc -w and got 575 misspelled words 
+ENGISHCHECKER--->HAWAIIANCHECKER = tr -cs 'A-Za-z' '[\n*]' < assign3.txt
+ | sort -u | comm -23 - hwords, but adjust by doing 
+cat assign3.html | tr '[:upper:]' '[:lower:]' | tr -cs "'A-Za-z" '[\n*]'
+ | sort -u | comm -23 - hwords
+HAWAIIANCHECKER on hwords: 
+cat hwords | tr '[:upper:]' '[:lower:]' | tr -cs "A-Za-z'" '[\n*]' |
+ sort -u | comm -23 - hwords
+this outputs 0 
+
+Words reported by ENGISHCHECKER but not by HAWAIIANCHECKER: 
+tr -cs 'A-Za-z' '[\n*]' < assign3.html | sort -u | comm -23 - words 
+> englishCheck.txt
+cat englishCheck.txt | tr '[:upper:]' '[:lower:]' | tr -cs "'A-Za-z" 
+'[\n*]' | sort -u | comm -12 - hwords | wc -w
+I got 4 words for this 
+The words were hala, kahiki, lau, and wiki 
+Words reported by HAWAIIANCHECKER but not by ENGISHCHECKER: 
+cat assign3.html | tr '[:upper:]' '[:lower:]' | tr -cs "'A-Za-z" '[\n*] |
+ sort -u | comm -23 - hwords > hawaiianCheck.txt
+and then do 
+tr -cs 'A-Za-z' '[\n*]' < hawaiianCheck.txt | sort -u | comm -12 - words |
+ wc -w
+I got a total of 513 words 
+Two examples of these words can be found by removing the wc -w command 
+Two examples are with and without. 
+ 

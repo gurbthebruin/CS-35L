@@ -1,0 +1,16 @@
+#!/bin/bash
+
+sed 's/?//g' | 
+sed 's/<u>//g' | 
+sed 's/<\/u>//g' |
+tr '[:upper:]' '[:lower:]' |   
+sed "s/\`/'/g" | 
+sed "s/-/ /g" |
+grep "<td[^>]*>[pk'mnwlhaeiou ]*</td> *" |
+sed 's/<[^>]*>//g' |
+grep -E -v '^$' | 
+sed 's/^\s*//g' |
+sed 's/ /\n/g' |
+sort -u  
+#sed '/^$/d'
+
