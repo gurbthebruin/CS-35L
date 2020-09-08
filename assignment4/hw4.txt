@@ -1,0 +1,41 @@
+Gurbir Arora 105178554
+
+1. This patch improves the performance, which is easy to see by
+comparing the real times outputted by time ./lab4install/bin/ls
+/usr/bin and time ./coreutils-8.29/src/ls /usr/bin, which happen to be
+0.019s vs. 0.008s respectively. This is due to the patch file removing
+the case where -A is present, which strengthens the performance.
+2. If the company adopts this patch, it would be smart to double check
+any program or script that uses the ls along with -a and -A because
+the program might depend on the faulty output and this would result in
+an error when the patch is adopted.
+3. Calling randline.py on an empty file, such as /dev/null file using the 
+command ./randline.py /dev/null results in an error output gives an output of
+Traceback (most recent call last): File "./randline.py", line 70, in <module>
+main() File "./randline.py", line 64, in main
+sys.stdout.write(generator.chooseline()) File "./randline.py", line
+34, in chooseline return random.choice(self.lines) File
+"/usr/lib64/python2.7/random.py", line 274, in choice return
+seq[int(self.random() * len(seq))] # raises IndexError if seq is empty
+IndexError: list index out of range This is due the file containing 0
+lines, so when self.random() * len(seq) is calculated, it will hold 0
+and the script will proceed to access seq[0]. When attempting to
+access seq at the 0 index, an out of bound error occurs.
+
+4. If we run the command python3 randline.py /dev/null, we get the
+output: File "randline.py", line 65 except IOError as (errno,
+strerror): ^ SyntaxError: invalid syntax This is due to a syntax error
+that was seemingly valid in Python 2, but must've been "patched" in
+Python 3. While they both result in errors, Python 3 catches the error
+earlier and this allows for a more pleasant experience for the
+debugger.
+
+5. My script runs perfectly fine with Python 2, which means that I
+didn't use anythig specific to Python 3. However, if I had used
+something that changed from Python 2 to Python 3, an error might not
+occur, but the intended use of an operation may not be
+transparent. For example, from 2 to 3, integer division had a change
+in which floating values were calculated instead of regular c++-like
+integer division, so if I had used the floating point values, the
+function of my script would be different if I had ran it under Python
+2 while developing it under Python 3.
