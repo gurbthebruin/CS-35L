@@ -1,0 +1,58 @@
+Gurbir Arora 
+105178554
+1. man -k word
+2. which mv -> mv: /usr/local/cs/bin/mv 
+which sh -> sh: /usr/bin/sh
+3. find /usr/bin -executable -name '?r'
+/usr/bin/tr: whatis /usr/bin/tr -> translate or delete characters 
+/usr/bin/ar: whatis /usr/bin/ar -> create, modify, and extract from archives
+/usr/bin/pr: whatis /usr/bin/pr -> convert text files for printing
+man -k ^.r$
+ar (1)               - create, modify, and extract from archives
+ar (1p)              - create and maintain library archives
+pr (1)               - convert text files for printing
+pr (1p)              - print files
+tr (1)               - translate or delete characters
+tr (1p)              - translate characters
+
+4.ls -dl /usr/bin/emacs ---> /usr/bin/emacs -> /etc/alternatives/emacs
+5. /usr/bin/gcc -v: gcc version 4.8.5 20150623 (Red Hat 4.8.5-39) (GCC) 
+ gcc -v: gcc version 9.3.0 (GCC)
+they are dfiferent because 
+6.u+sx: enable the setuid flag for the file and gives executable permission to owner
+o-w: users not in the file's group can no longer execute the file
+read through man chmod to find this 
+7. find /usr/local/cs -type d -mtime -28
+/usr/local/cs
+/usr/local/cs/src/git
+/usr/local/cs/src/git/RCS
+/usr/local/cs/src/coreutils
+/usr/local/cs/src/coreutils/RCS
+446
+used man find 
+8.used whereis find to find location of find: whereis find --> /usr/bin/
+find /usr/bin/ -type l | wc -l
+292
+9. ls -lta find /usr/lib64
+used man ls to find ls -lta command
+Dec 28  2013 librom1394.so.0.3.0
+10. By using man locale and searching through man 7 locale, I was able to see that the locale gets it data based on the settings of the environment variables that control the locale. Then, I stumbled upon LOCPATH on locale(7), which seems to be the environment variable storing the path to compile local data files. I was also able to see that locale gets its data from these two files: /usr/lib/locale/locale-archive (Usual default locale archive location) and  /usr/share/i18n/locales(Usual default path for locale definition files). Found this in the man locale. 
+11.used C-h a to search for downcase and found downcase-dwim, downcase-region, and downcase-word
+12. I used C-h c to search for keystroke commands C-M-r through C-M-v and used the output along with C-h a to search for what the command does
+C-M-r: isearch-backward-regexp: Do incremental search backward for regular expression 
+C-M-s: isearch-forward-regexp: Do incremental search forward for regular expression.
+C-M-t: transpose-sexps:  Like \[transpose-chars] (`transpose-chars'), but applies to sexps.
+C-M-u: backward-up-list:  Move backward out of one level of parentheses.
+C-M-v: scroll-other-window:  Scroll next window upward ARG lines; or near full screen if no ARG
+13. used C-h c to get that C-g runs the command keyboard-quit, then used C-h f to find that C-g Signals a "quit" condition.
+During execution of Lisp code, this character causes a quit directly.
+At top-level, as an editor command, this simply beeps.
+14. Used C-h f and searched for yank to find that it is an interactive compiled Lisp function in "simple.el".
+It is bound to C-y <- use this command to yank. 
+The command Reinsert ("paste") the last stretch of killed text.
+More precisely, reinsert the most recent kill, which is the
+stretch of killed text most recently killed OR yanked.  Put point
+at the end, and set mark at the beginning without activating it.
+With just C-u as argument, put point at beginning, and mark at end.
+With argument N, reinsert the Nth most recent kill.
+15.Used C-s to find dired and used C-x d /usr/bin and found that the inital output line was "total used in directory 331548 available 8604848" vs the ls -l /usr/bin, which had its first line output as "total 331472". So only the emacs version output the available space.  
