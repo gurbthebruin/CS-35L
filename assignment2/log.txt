@@ -1,0 +1,32 @@
+Gurbir Arora 
+105178554
+
+Assume lnxsrv09 to be the "client" and lnxsrv07 to be the "server"
+Sign into the client side by typing  ssh username@lnxsrv09.seas.ucla.edu and entering your password 
+Type ls -a in order to see whether or not their exists a .ssh directory
+-if it doesn't, type mkdir .ssh 
+proceed to make .ssh the current directory by typing cd .ssh 
+generate a SSH key by typing the command ssh-keygen and you will be prompted to give the file a name of your choosing 
+following this, you will be asked to create a passphrase, make sure you remember this! This is used to secure your private key 
+Type ls to make sure that you have a public and private key in this directory 
+Sign into the server side by typing ssh username@lnxsrv07.seas.ucla.edu and enter your password when prompted to 
+When need to get the public key on the server, but luckily the SEASnet servers share file, so we don't need to do anything here
+Now, we need to create an authorized_keys file under the .ssh directory by typing touch authorized_keys
+Enter chmod 600 authorized_keys to assure the permissions of the file are correct
+Now, we need to append the contents of the public key file to the authorized_keys file 
+This can be done by typing the command cat NameOfPublicKeyFile.pub >> authorized_keys
+Now, go back to your client server and enter ssh -i <relative_path_to_private_key>  username@lnxsrv07.seas.ucla.edu 
+This should allow you to ssh between client and server by entering your passphrase 
+Now from your client side, we will make use of ssh-agent by entering eval `ssh-agent` to which you should see Agent pid #####, which assures that the process has began running. 
+Next, we add our key to ssh-agent by typing ssh-add 35Lweek2 and you should be prompted to type your passphrase 
+Now, we log into the server by typing ssh -i <relative_path_to_private_key> username@lnxsrv07.seas.ucla.edu
+This should log you into the server with no password/passphrase prompt
+In order to enable port-forwarding, I downloaded XQuartz and on terminal I logged in using ssh -X gurbir@lnxsrv09.seas.ucla.edu
+I then typed in xeyes to test it out
+In order to allow for Multi-Hop SSH, to do this in one command line, you must log into lnxsrv09 with the following command to allow agent forwarding: ssh -A gurbir@lnxsrv09.seas.ucla.edu 
+Then, cd .ssh and enter the commands eval `ssh-agent` and ssh-add 35Lweek2 and enter you passphrase
+Once you have done this, in order to jump to lnxsrv09 to lnxsrv10 while jumping through lnxsrv07, enter the command: 
+ ssh -A -t gurbir@lnxsrv07.seas.ucla.edu ssh -A -t gurbir@lnxsrv10.seas.ucla.edu
+Now you should be on lnxsrv10 with a starting point of lnxsrv09 and a midpoint of lnxsrv07. I confirmed this by exititng and saw that it exited from lnxsrv10 and lnxsrv07. 
+ 
+
