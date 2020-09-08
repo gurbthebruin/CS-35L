@@ -1,0 +1,288 @@
+Gurbir Arora 105178554
+
+#lab.txt 
+
+1. Write a C transliteration program tr2b.c that uses getchar and putchar to transliterate bytes as described above
+In order to do this, I used a char map array of size 256 as this is the max number of 8-bit char value combinations. The program will initially scan for errors in the input such as the from and to not being the same size. Any error detected will exit with exit code 1. This implementation is very much like a hash map. First, I checked whether 2 inputs were provided and if so, I checked if the size of these arguments were equal. Then, I initialized the map to all zeros and iterated through from and if the map value at the current index wasn't zero, this meant some characters we duplicated, so I exited due to duplication. If the value of the map at the current index was 0, then I set the value of from[i] to the value of to[i]. 
+
+2. Write a C program tr2u.c that uses read and write to transliterate bytes, instead of using getchar and putchar. The nbyte arguments to read and write should be 1, so that the program reads and writes single bytes at a time. 
+This was a simple process where I just replaced lines containing getchar and putchar, such as "(x = getchar()) != EOF)" to "read(0,x,1)" and "(putchar(op) == EOF)" to "write(1, &op, 1) < 1". Also, I changed each fprintf to write. In this program, 1 byte is taken from the op and printed to the stdout.  
+
+3. Use the strace command to compare the system calls issued by your tr2b and tr2u commands (a) when copying one file to another, and (b) when copying a file to your terminal. Use a file that contains at least 5,000,000 bytes.
+In order to create a 5mb file of random characters I used the script:
+import random
+import string
+
+
+length = 5000000
+s = "q"
+while length > 0 :
+        s += random.choice(string.ascii_letters + string.digits)
+        length = length - 1
+print(s)
+
+i ran strace ./tr2b a b < largefile.txt > output1.txt and saw that the output looked like: 
+read(0, "FaDA93UC63OQepYHdRQVSZHKXu9cBwzK"..., 8192) = 8192
+write(1, "wZYKeNZ4DPSUKWb9NztpcmEFYNDLMmwH"..., 8192) = 8192
+read(0, "ZjzxBDAYxKjMEGkuhxA03BI7iwdA6M6d"..., 8192) = 8192
+write(1, "FbDA93UC63OQepYHdRQVSZHKXu9cBwzK"..., 8192) = 8192
+and when i ran strace ./tr2u a b < largefile.txt > output2.txt the output looked like: 
+write(1, "A", 1)                        = 1
+read(0, "0", 1)                         = 1
+write(1, "0", 1)                        = 1
+read(0, "2", 1)                         = 1
+which means that tr2b.c reads and writes with buffers of size 8192 bytes while tr2u.c reads and writes with buffers of size 1. This is why tr2b takes a lot less time to run. 
+Now, to using the -c option, I was able to measure time: 
+strace -c ./tr2b a b < largefile.txt > output1.txt
+% time     seconds  usecs/call     calls    errors syscall
+------ ----------- ----------- --------- --------- ----------------
+ 65.28    0.001100           2       611           write
+ 34.72    0.000585           1       613           read
+  0.00    0.000000           0         2           open
+  0.00    0.000000           0         2           close
+  0.00    0.000000           0         4           fstat
+  0.00    0.000000           0         9           mmap
+  0.00    0.000000           0         4           mprotect
+  0.00    0.000000           0         1           munmap
+  0.00    0.000000           0         1           brk
+  0.00    0.000000           0         1         1 access
+  0.00    0.000000           0         1           execve
+  0.00    0.000000           0         1           arch_prctl
+------ ----------- ----------- --------- --------- ----------------
+100.00    0.001685                  1250         1 total
+
+strace -c ./tr2u a b < largefile.txt > output2.txt
+
+% time     seconds  usecs/call     calls    errors syscall
+------ ----------- ----------- --------- --------- ----------------
+ 55.09   26.580961           5   5000002           write
+ 44.91   21.670481           4   5000004           read
+  0.00    0.000000           0         2           open
+  0.00    0.000000           0         2           close
+  0.00    0.000000           0         2           fstat
+  0.00    0.000000           0         7           mmap
+  0.00    0.000000           0         4           mprotect
+  0.00    0.000000           0         1           munmap
+  0.00    0.000000           0         1           brk
+  0.00    0.000000           0         1         1 access
+  0.00    0.000000           0         1           execve
+  0.00    0.000000           0         1           arch_prctl
+------ ----------- ----------- --------- --------- ----------------
+100.00   48.251442              10000028         1 total
+
+When copying to terminal: strace -c ./tr2b a b  < largefile.txt
+the output is: \
+% time     seconds  usecs/call     calls    errors syscall
+------ ----------- ----------- --------- --------- ----------------
+ 91.74    0.052103          11      4883           write
+  7.75    0.004402           7       613           read
+  0.19    0.000110          12         9           mmap
+  0.10    0.000058          15         4           mprotect
+  0.06    0.000032          16         2           open
+  0.06    0.000032           8         4           fstat
+  0.03    0.000019          19         1           munmap
+  0.02    0.000010          10         1         1 access
+  0.02    0.000009           5         2           close
+  0.01    0.000007           7         1           execve
+  0.01    0.000007           7         1           arch_prctl
+  0.01    0.000005           5         1           brk
+------ ----------- ----------- --------- --------- ----------------
+100.00    0.056794                  5522         1 total
+ vs strace -c ./tr2u a b  < largefile.txt, which outputs
+econds  usecs/call     calls    errors syscall
+------ ----------- ----------- --------- --------- ----------------
+ 55.29   27.944024           6   5000002           write
+ 44.71   22.594698           5   5000004           read
+  0.00    0.000094          13         7           mmap
+  0.00    0.000045          11         4           mprotect
+  0.00    0.000025          13         2           open
+  0.00    0.000023          23         1           munmap
+  0.00    0.000013           7         2           close
+  0.00    0.000013           7         2           fstat
+  0.00    0.000012          12         1           execve
+  0.00    0.000009           9         1         1 access
+  0.00    0.000005           5         1           brk
+  0.00    0.000005           5         1           arch_prctl
+------ ----------- ----------- --------- --------- ----------------
+100.00   50.538966              10000028         1 total
+these results show that copying one file to another and  copying a file to your terminal the same amount of system calls except for the write of the tr2b, which was more while copying to terminal. The system calls vary in speed and mmap, mprotect, fand fstat seem to be much more slower when copying to terminal. 
+
+
+4. Use the time command to measure how much faster one program is, compared to the other, when copying the same amount of data.
+
+time ./tr2b a b <largefile.txt> output1.txt outputs: 
+
+real	0m0.311s
+user	0m0.166s
+sys	0m0.007s
+
+time ./tr2u a b <largefile.txt> output2.txt outputs: 
+
+real	0m13.107s
+user	0m3.393s
+sys	0m9.624s
+
+Now for copying to terminal: 
+
+time ./tr2b a b < largefile.txt outputs: 
+
+real	0m4.103s
+user	0m0.201s
+sys	0m0.049s
+
+time ./tr2u a b  < largefile.txt outputs: 
+
+real	0m13.183s
+user	0m3.432s
+sys	0m9.706s
+
+It is easy to see that the buffered program is much faster than the unbuffered program, most likely because it has to make less system calls in both cases. Also, copying from file to file turns out to be much quicker than copyinf to the terminals. 
+  
+--------------------------
+report.txt 
+
+I created 4 files (empty.txt, 100lines.txt, 10000lines.txt,  mil_lines.txt) in order to test the program. 
+Using time I was able to see: 
+time ./sfrobu < empty.txt
+
+real	0m0.002s
+user	0m0.000s
+sys	0m0.001s
+
+time ./sfrob < empty.txt
+
+real	0m0.002s
+user	0m0.001s
+sys	0m0.000s
+
+time ./sfrobu < 100lines.txt
+
+real	0m0.003s
+user	0m0.000s
+sys	0m0.002s
+
+time ./sfrob < 100lines.txt
+
+real	0m0.003s
+user	0m0.002s
+sys	0m0.000s
+
+time ./sfrobu < 10000lines.txt
+
+real	0m0.048s
+user	0m0.014s
+sys	0m0.033s
+
+time ./sfrob < 10000lines.txt
+
+real	0m0.081s
+user	0m0.025s
+sys	0m0.055s
+
+time ./sfrobu < mil_lines.txt
+
+real	0m4.545s
+user	0m1.559s
+sys	0m2.951s
+
+time ./sfrob < mil_lines.txt
+
+real	0m9.869s
+user	0m4.910s
+sys	0m5.901s
+
+On the files with a smaller number of files, the time was practically the same, but on the million line file, the time difference was quite large. The sfrobu file seems to have won the race, but I wasn't anticipating for this to be the case as it I would've expected for sfrob to be the faster one. This should be cleared up by using the strace command. 
+
+The CPU performance can be modeled by 
+
+time = (avg time/input lines total) * number of lines 
+
+for the sfrobu.c file: 
+
+time = 0.00000455 * lines 
+
+for the sfrob.c file: 
+
+time = 0.00000986 * lines
+
+I used strace -c ./sfrobu < empty.txt and saw that 
+
+ % time     seconds  usecs/call     calls    errors syscall
+------ ----------- ----------- --------- --------- ----------------
+ 24.70    0.000146          21         7           mmap
+ 20.64    0.000122          31         4           mprotect
+ 13.03    0.000077          26         3           read
+ 11.68    0.000069          35         2           open
+ 10.66    0.000063          16         4           brk
+  6.94    0.000041          21         2           close
+  4.06    0.000024          24         1           arch_prctl
+  3.21    0.000019           6         3           fstat
+  2.71    0.000016          16         1           munmap
+  1.69    0.000010          10         1         1 access
+  0.68    0.000004           4         1           execve
+  0.00    0.000000           0         3           write
+------ ----------- ----------- --------- --------- ----------------
+100.00    0.000591                    32         1 total
+
+This shows alot of calls being made to mmap something which I didn't see before which was brk. Diving deeper, I called strace ./sfrobu < empty.txt to see when exactly this was called. I saw brk(NULL) used many times and found out that this is called to find where the heap runs out of memory. So it seems like mmap is used to allocate memory and brk is used to assure memory that isn't available isn't assigned and vice versa. I called 
+ strace -c ./sfrobu < 100lines.txt and noticed: 
+ % time     seconds  usecs/call     calls    errors syscall
+------ ----------- ----------- --------- --------- ----------------
+ 91.50    0.001657           5       303           write
+  2.43    0.000044           6         7           mmap
+  1.99    0.000036           9         4           mprotect
+  0.88    0.000016           8         2           open
+  0.83    0.000015           5         3           fstat
+  0.61    0.000011          11         1           munmap
+  0.44    0.000008           8         1         1 access
+  0.39    0.000007           7         1           execve
+  0.33    0.000006           3         2           close
+  0.22    0.000004           1         3           read
+  0.22    0.000004           1         4           brk
+  0.17    0.000003           3         1           arch_prctl
+------ ----------- ----------- --------- --------- ----------------
+100.00    0.001811                   332         1 total
+
+then  strace -c ./sfrobu < 10000lines.txt
+
+q3 % time     seconds  usecs/call     calls    errors syscall
+------ ----------- ----------- --------- --------- ----------------
+ 99.98    0.168862           6     30003           write
+  0.02    0.000031           3        10           brk
+  0.00    0.000000           0         4           read
+  0.00    0.000000           0         3           open
+  0.00    0.000000           0         3           close
+  0.00    0.000000           0         4           fstat
+  0.00    0.000000           0         8           mmap
+  0.00    0.000000           0         4           mprotect
+  0.00    0.000000           0         2           munmap
+  0.00    0.000000           0         1         1 access
+  0.00    0.000000           0         1           execve
+  0.00    0.000000           0         1           arch_prctl
+------ ----------- ----------- --------- --------- ----------------
+100.00    0.168893                 30044         1 total
+
+and finally strace -c ./sfrobu < mil_lines.txt
+
+ 
+If we suppose the assignment rules were changed so that we used system calls rather than <stdlib.h>, I think we would see the program would call brk and mmap to manage memory instead of malloc, realloc, amd free. Specifically, we would see calls such as brk(NULL) close(3), and mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f880c95a00.
+
+qj % time     seconds  usecs/call     calls    errors syscall
+------ ----------- ----------- --------- --------- ----------------
+ 99.98   16.160783           5   3000003           write
+  0.01    0.001755         439         4           read
+  0.01    0.000818         136         6           munmap
+  0.00    0.000008           3         3           open
+  0.00    0.000006           1        12           mmap
+  0.00    0.000003           1         3           close
+  0.00    0.000003           1         4           brk
+  0.00    0.000001           0         4           fstat
+  0.00    0.000000           0         4           mprotect
+  0.00    0.000000           0         1         1 access
+  0.00    0.000000           0         1           execve
+  0.00    0.000000           0         1           arch_prctl
+------ ----------- ----------- --------- --------- ----------------
+100.00   16.163377               3000046         1 total
+
+It is easy to see that the number of calls to write increases(obviously), but the number of calls to mmap and brk doesn't flucuate much. 
+
