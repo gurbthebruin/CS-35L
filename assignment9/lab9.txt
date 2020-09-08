@@ -1,0 +1,106 @@
+Gurbir Arora 
+105178544
+
+1. Make the current directory the once specified in the spec by doing cd ~eggert/src/gnu/emacs-CS-35L
+
+enter du to find the amount of spce used to represent the working files in this directory: the output is the byte space taken by each file and final number is the total disk space used: 590312 bytes
+
+to find how much is used to represent the git repository enter du .git and you should find that the final value is the amount of disk space spent on the Git repository: 424356	.git
+
+in order to find the files that use the most space, simply sort the output of du .git by enter du .git | sort -h. You will see that:     
+7892	.git/objects/info
+415112	.git/objects/pack
+423008	.git/objects
+
+take up the most space as the previous files only take up 780 bytes of space. After looking into these files, it is clear that the .git/objects stores all of the content for your databases. This collection of objects contains years of git commits, which is most likely the reason is takes up so much space. 
+
+To dive a bit deeper, I used the command find . -type f -exec du -a {} + | sort -h
+
+7888	./.git/objects/info/commit-graph
+10168	./.git/objects/pack/pack-b94ee3a428f34c612fbb3eee64c3915111d65799.pack
+23876	./.git/objects/pack/pack-24e56b1749b9320c560213d9045fa6cee42b4174.idx
+48316	./.git/objects/pack/pack-4a50c60756921c3a37f640d34ff8feadd550b377.pack
+318152	./.git/objects/pack/pack-24e56b1749b9320c560213d9045fa6cee42b4174.pack
+
+This basically confirms my intial thought as I found out that these pack files are basically like zip files of new object introduced to the repository and overtimes, these files add up. 
+
+2. In order to find the number of local branches in the repoo use: git branch | wc -l, for which I got 176 
+
+Now, to find the remote repos use git branch -r | wc -l and for this I got 177
+
+3. In order to find a repo's remote repos use git remote -v which gave me: 
+
+origin	/u/cs/fac/eggert/src/gnu/emacs (fetch)
+origin	/u/cs/fac/eggert/src/gnu/emacs (push)
+savannah	https://git.savannah.gnu.org/git/emacs.git (fetch)
+savannah	https://git.savannah.gnu.org/git/emacs.git (push)
+
+While may appear like there are 2 repos, they are the same remote repo with one being the push and one being the fetch, so the one remote repo is https://git.savannah.gnu.org/git/emacs.git
+
+4. The ten local branches most recently committed to can be found by entering: 
+git for-each-ref --sort=committerdate refs/heads/ | head -10
+
+5448c0cce64b7f5277c820dcd3cd839f9388e241 commit	refs/heads/other-branches/miles-orphaned-changes
+f4c1c47c5b311c19b4cd0c3296783fc83b6c19b9 commit	refs/heads/old-branches/branch-5_8
+71c9ec5139c8cacdcdcc499a72f3800f1b84000a commit	refs/heads/other-branches/gerd_0001
+f57c4de274087f802f52587b362acc2cee4c7833 commit	refs/heads/other-branches/custom_themes
+f1f65349f47be2982fc2dfb3847c730e520703f6 commit	refs/heads/other-branches/gerd_int
+1cda365bcc8ffdc03ea705be1ca0860e56149944 commit	refs/heads/old-branches/gerd_defvaralias
+086514436a4cbc004a43a4ab331e29e3ad9da835 commit	refs/heads/other-branches/patches_21_0
+3efcf1ddcd36f63a94845e8df2135ad02706fe8e commit	refs/heads/other-branches/gerd_big
+f0643701da91a91f0c36dc356e00070f38af9ebe commit	refs/heads/other-branches/gerd_dbe
+2c92b538e6b484cc731fa8d2225ed16459e9848c commit	refs/heads/other-branches/fx-branch
+
+This lists the hash key with the commit and is sorted using the commit date
+
+5. To find the number of commits in the master branch, use git rev-list --count master and for this, I got 141268. 
+
+6. To find the number of commits in any branch use git rev-list --all --count, for which I got 145595. Now the percentage of overlapping commits are 141268/145595 = 0.9703 = 97.03%
+
+7. To find the ten people with the msot master-branch commits committed in 2013 or later with the amount of commits authored use the command  git shortlog master --since=2013.01.01 -s -n | head -n 10
+
+the output was: 
+
+  3922	Eli Zaretskii
+  3792	Glenn Morris
+  3784	Paul Eggert
+  1887	Stefan Monnier
+  1833	Lars Ingebrigtsen
+  1671	Michael Albinus
+   671	Dmitry Gutov
+   604	Noam Postavsky
+   568	Juri Linkov
+   506	Alan Mackenzie
+
+8. exit in order to login via ssh -X
+ssh -X gurbir@lnxsrv09.seas.ucla.edu
+cd ~eggert/src/gnu/emacs-CS-35L
+gitk hash# 
+
+so I did 
+
+gitk    4ea37c2b8b0c5a68fde59770c3536195e0972217 4ea37c2b8b ("Cope better with C++ and Objective-C protection keywords in class declarations", 2017-09-16)
+
+gitk	977cd6cb28a37744966ec62f70cf62659f6f302a
+
+update tp 4ea37...
+
+gitk	625cee531623feddbe3174fad52c7db96ec60bb3
+gitk	5490ccc5ebf39759dfd084bbd31f464701a3e775
+gitk	0c06b93c1e467debd401eb0b3be4652fde14fa95
+gitk	820739bbb572b30b6ce45756c9960e48dca859af
+gitk	00e4e3e9d273a193620c3a4bb4914e555cb8e343
+gitk	49cd561dc62ea6b3fbedab7aef0f020733f4cf09
+gitk	abcb2e62dae6aa26308f7ac9efc89247f89cbe65
+gitk	98ac36efe4ce4bd3a0bca76fc73ce6c7abaa4371
+
+copy each ID in to SHA ID and hit "Go To:" in order to inspect that hash 
+
+After inspecting the output of each of these on XQuartz, I mapped together the commits. It seems as if the 4ea commit is the master and starts two other branches, which are the 977 and 625 branches. The 977 eventually leads to 0c0 while the 625 eventually leads to the 549 and this eventually leads to the 0c0 branch. Now that both of these branches merge at 0c0. After this merge, the 0c0 eventually splits and one end leads to 820 while the other goes to abc. From 820, the next branch is 00e and then it eventually reaches 49c. 49c merges back with abc, but also another commit is merged eventually leading to 98a. From abc commit, the commit eventually leads to 98a and the branches merge end off here for this problem. 
+
+     |---977 -> ..... -> 0c0 -> ... -> ... ->  ........... abc -> ... -> 98a
+4ea -|			   |	|	 		    |		  |
+     |__625-> ... ->549 -->|    |->820 -> 00e -> ... -> 49c-|-------------|
+
+The merge commits are 0c0, abc, and 98a as shown by the diagram.
+   
