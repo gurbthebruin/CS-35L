@@ -1,0 +1,7 @@
+2020-05-30  Gurbir Singh Arora  <gurbir@lnxsrv04.seas.ucla.edu>
+
+	* quote-3.0-patch.txt: This is a patch for the change in the GNU glibc coding standa\
+	rd. The convention to follow is now 'like this' or  "like this" and `not like this'  or ``no\
+	t like this". The changes have been applied to string constants in .c files.
+	Use C-x C-s and C-x C-c to exit
+

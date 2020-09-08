@@ -1,0 +1,109 @@
+Gurbir Arora 
+105178554 
+
+1. vim hw8.txt
+2. Check out version 3.0 of Diffutils from your repository, into a new branch named “quote”.
+This can be done by entering navigating to the diffutils directory and use git checkout v3.0 -b quote 
+
+M	src/analyze.c
+M	src/cmp.c
+M	src/context.c
+M	src/diff.c
+M	src/diff3.c
+M	src/dir.c
+M	src/sdiff.c
+M	src/side.c
+M	src/util.c
+ 
+3. Install your change into this new branch, by running the patch command with your patch quote-3.0-patch.txt as input.
+Install this new branch running the command patch -p1 < quote-3.0-patch.txt
+4. Learn how to use the Emacs function add-change-log-entry-other-window (C-x 4 a).
+This command allows for a new entry to be added to the change log of a file that is currently being edited
+
+5. Use this Emacs function to compose an appropriate ChangeLog entry for your patch, by adapting the change log from the original patch.
+
+emacs quote-3.0-patch.txt
+C-x 4 a 
+2020-05-30  Gurbir Singh Arora  <gurbir@lnxsrv04.seas.ucla.edu>
+
+        * quote-3.0-patch.txt: This is a patch for the change in the GNU glibc coding standa\
+rd. The	convention to follow is now 'like this' or  "like this" and `not like this'  or	``no\
+t like this". The changes have been applied to string constants	in .c files.
+Use C-x C-s and C-x C-c to exit 
+
+6. Commit your changes to the new branch, using the ChangeLog entry as the commit message.
+
+To commit these changes use git add src/*.c and then git commit -F ChangeLog
+
+7. Use the command “git format-patch” to generate a file formatted-patch.txt. This patch should work without having to fix things by hand afterwards.
+
+In order to generate a formatted patch file use git format-patch -1 --stdout > formatted-patch.txt
+ 9 files changed, 75 insertions(+), 73 deletions(-)
+
+8. Verify that your patch works, by cloning a new repository, checking out the clone's version 3.0 into a new temporary branch patchery, applying the patch with the command “git am”, and building the resulting system, checking that it works with “make check”.
+
+In order to verify that this works, create a new directory called patch 
+
+mkdir patch 
+cd patch 
+git clone https://git.savannah.gnu.org/git/diffutils.git
+cd diffutils 
+git checkout 022cd5c5eb647a22a4daa5fe5cbc10af6d5a1112 -b patch
+cd ..
+cd diffutils 
+mv formatted-patch.txt .. 
+cd ..
+git am < formatted-patch.txt 
+./bootstrap
+./configure
+make 
+make check 
+
+9. Verify that your ChangeLog entry works, by running the command “make distdir” and inspecting the resulting diffutils*/ChangeLog file.
+
+After running make distdir, a new directory names diffutils-3.0.1-d70f was created and it consisted of a ChangeLog file. I viewed the ChangLog file and saw my edit at the top of the file. 
+
+2020-05-30  Gurbir Singh Arora  <gurbir@lnxsrv04.seas.ucla.edu>
+
+        2020-05-30 Gurbir Singh Arora <gurbir@lnxsrv04.seas.ucla.edu>
+                * quote-3.0-patch.txt: This is a patch for the change in the GNU glibc coding standa\
+                rd. The convention to follow is now 'like this' or  "like this" and `not like this'  or ``no\
+                t like this". The changes have been applied to string constants in .c files.
+                Use C-x C-s and C-x C-c to exit
+
+with this at the top. 
+
+
+
+10. There is a copy of the GNU Emacs git repository's master branch on SEASnet in the directory ~eggert/src/gnu/emacs. Run the command gitk on it, and find the newest merge that is not newer than 2015-01-25. Briefly describe (in hw8.txt) your view of the mergepoint, along with the roles of subwindows that you see.
+
+Now, run gitk on  ~eggert/src/gnu/emacs, which resulted in the following error: 
+Error in startup script: no display name and no $DISPLAY environment variable
+    while executing
+"load /usr/lib64/tk8.5/../libtk8.5.so Tk"
+    ("package ifneeded Tk 8.5.7" script)
+    invoked from within
+"package require Tk"
+    (file "/usr/local/cs/bin/gitk" line 10)
+
+This means I need included the -Y when I sign into the Linux server so sign in with ssh -Y gurbir@lnxsrv04.seas.ucla.edu
+
+Then cd ~eggert/src/gnu/emacs and run gitk ~eggert/src/gnu/emacs 
+
+This open a new window on xquartz
+
+The newest merge prior to 2015-01-25 is: 
+Author: Paul Eggert <eggert@cs.ucla.edu>  2015-01-24 19:00:41
+Committer: Paul Eggert <eggert@cs.ucla.edu>  2015-01-24 19:02:07
+Parent: f6ef836521dfd07a0a33d5f1f384427f0c4023ce (Use gnustep-config if available)
+Child:  f67446455fc0ec59f5c25c90a8783e571b60dc8f (lisp/gnus/gnus-group.el (gnus-group-suspend): Close all backends)
+Branches: master, remotes/origin/master and many more (268)
+Follows: emacs-24.4
+Precedes: emacs-25.0.90
+
+    * indent/shell.sh (bar): Use '[ $# -eq 0 ]', not '[ $# == 0 ]'.
+    
+    This is more portable in shell scripts.
+    Fixes: bug#19658
+
+The mergepoint is shown on the top left window with node-like dots representing the merges. The next window represents the author behind the patch and the window to the right represents the date of patching. The bottom left window indicated patch message and to the right displays comments on the patch.   
