@@ -1,0 +1,136 @@
+Gurbir Arora 
+105178544 
+
+In order to get the old stable verion of coreutils use the command wget http://web.cs.ucla.edu/classes/winter20/cs35L
+/assign/coreutils-with-bug.tar.gz snd unpack the tar file using tar -xzvf coreutils-with-bug.tar.gz 
+Now, cd into coreutils-with-bug using cd coreutils-with-bug and use the command ./configure -prefix=
+/u/ee/ugrad/gurbir/assignment5/coreutils-with-bug and then attempt to make the file 
+The installation failed because the of conflicting types for futimens and the error ouwput was 
+utimens.h:2:5: error: conflicting types for 'futimens'
+    2 | int futimens (int, char const *, struct timespec const [2]);
+      |     ^~~~~~~~
+In file included from utimecmp.h:25,
+                 from utimecmp.c:25:
+/usr/include/sys/stat.h:373:12: note: previous declaration of 'futimens' was here
+  373 | extern int futimens (int __fd, const struct timespec __times[2]) __THROW;
+      |            ^~~~~~~~
+make[3]: *** [Makefile:659: utimecmp.o] Error 1
+make[3]: Leaving directory '/w/home.06/ee/ugrad/gurbir/assignment5/coreutils-with-bug/lib'
+make[2]: *** [Makefile:414: all] Error 2
+make[2]: Leaving directory '/w/home.06/ee/ugrad/gurbir/assignment5/coreutils-with-bug/lib'
+make[1]: *** [Makefile:419: all-recursive] Error 1
+make[1]: Leaving directory '/w/home.06/ee/ugrad/gurbir/assignment5/coreutils-with-bug'
+make: *** [Makefile:357: all] Error 2
+
+As a fix for this, download the patch by using wget http://web.cs.ucla.edu/classes/spring20/cs35L/assign/coreutils.diff
+
+Apply the patch using patch -p0 < coreutils.diff and then run make and makefile This time the makefile shouldn't fail 
+because the patch renames the futimens and tee functions and this solves the issue by assuring that no functions habe overlapping names in coreutils. 
+
+Now it is time to retest the output which can be done by doing 
+
+tmp=$(mktemp -d)
+cd $tmp
+touch -d '1918-11-11 11:00 GMT' wwi-armistice-cs35L
+touch now
+sleep 1
+touch now1
+TZ=UTC0 /u/ee/ugrad/gurbir/assignment5/coreutils-with-bug/bin/ls -lt --full-time wwi-armistice-35L now now1
+After retesting the issue, the output is: 
+-rw-r--r-- 1 gurbir eeugrad 0 1918-11-11 11:00:00.000000000 +0000 wwi-armistice-35L
+-rw-r--r-- 1 gurbir eeugrad 0 2020-05-05 22:45:21.397513970 +0000 now1
+-rw-r--r-- 1 gurbir eeugrad 0 2020-05-05 22:44:24.544512119 +0000 now
+
+Now, the dates seem to be correct, but they aren't in the correct order as the earliest date should be at the bottom of the list. 
+This prompts me to use the debugger in order to find the source of the problem, which I did by running the commands
+gdb /u/ee/ugrad/gurbir/assignment5/coreutils-with-bug/bin/ls to enter gdb 
+and the b main to set a breakpoint 
+then r -lt --full-time and the program should stop at your breakpoint 
+Then, you must continue to step in to look into the program which I did by entering s for step
+I noticed that the program parses through the -t option and includes these instructions time_type = time_mtime;
+(gdb) 
+1405	  sort_type = sort_name;
+And then towards the end of the program, there's a switch case in which the program uses qsort to sort the files, which led me to 
+inspect the compare_mtime function. I set a breakpoint on compare_mtime and then I stepped through the function only to find that
+ another function called cmp_mtime is called. Time to rinse and repeat the gdp step through function with cmp_time which when you type l into gdb you get: 
+static inline int
+2877	cmp_mtime (struct fileinfo const *a, struct fileinfo const *b,
+2878		   int (*cmp) (char const *, char const *))
+2879	{
+2880	  int diff = timespec_cmp (get_stat_mtime (&b->stat),
+2881				   get_stat_mtime (&a->stat));
+2882	  return diff ? diff : cmp (a->name, b->name);
+2883	}
+2884	static int compare_mtime (V a, V b) { return cmp_mtime (a, b, xstrcoll); }
+Since nothing looks very revealing here, we must continue to go deeper and inspect timespec_cmp by setting a breakpoint with
+ b timespec_cmp and rerunning the program then enter l once the program is on the questioned function. 
+We then see: 
+	/* Return negative, zero, positive if A < B, A == B, A > B, respectively.
+44	   Assume the nanosecond components are in range, or close to it.  */
+45	static inline int
+46	timespec_cmp (struct timespec a, struct timespec b)
+47	{
+48	  int diff = a.tv_sec - b.tv_sec;
+49	  return diff ? diff : a.tv_nsec - b.tv_nsec;
+50	}
+51	
+52	# if ! HAVE_DECL_NANOSLEEP
+
+this shows that cmp_mtime processes the difference in seconds between the time on two files where if the times are equal,
+ the files are compared with their names, but if not, diff is passed through and returned by compare_mtime. This value is
+ then processed by qsort to put the files in order of most to least recent. 
+This hints at something going wrong in diff, so now it makes sense to check the diff value coming out of function by entering 
+the command p diff while stepping through the file and seeing return diff ? diff : a.tv_nsec - b.tv_nsec;
+the first time i saw -9, then -1092393662, and this seems to be cause by some integer overflow. One solution to this would be
+ to compare the times directly and return a value based on that comparison. 
+The breakpoint message indicates that the times are taken from Breakpoint 1, timespec_cmp (b=..., a=...) at ../lib/timespec.h:48, 
+which means it's time to inspect ../lib/timespec.h:48
+So now, I exited gdb by entering quit and then making my current directory coreutils-with-bug and then cd lib and copying timespec.h into 
+another file called timespec2.h using cp timespec.h timespec2.h
+Then, I wrote a fix for the timespec_cmp function so that it returns 1 if A>B and -1 if A<B and 0 if they are same so that the overflow error cant happen. 
+In the timespec2.h file, I modified the timespec_cmp to the following function:  
+timespec_cmp (struct timespec a, struct timespec b)
+{
+  if(a.tv_sec > b.tv_sec){
+        return 1;
+  } else if (a.tv_sec < b.tv_sec) {
+        return -1;
+  } else
+        return a.tv_nsec - b.tv_nsec;
+}
+Then create a diff file by, moving back to the coreutils-with-bug/lib directory and enter the command diff -u timespec.h timespec2.h > lab5.diff 
+Open this file in emacs and add your ChangeLog headline "2020-05-05 Gurbir Arora <gurbir@lnxsrv09.seas.ucla.edu>" and modify the first two lines to
+ include the name of incorrect file "lib/timespec.h" so that the modification are applied to that file. Then add the modifation caption such as
+ * timespec.h (timespec_cmp): Avoids integer overflow by return 1 if A>B, -1 if A<B, and 0 if they are equal. Exit the emacs file and save your work. 
+Then move the lab5.diff file to the coreutils-with-bug directory by doing mv lab5.diff .. while in the coreutils-with-bug/lib directory. Then move back a 
+directory by doing "cd ..". Then, apply the patch by typing patch -p0 < lab5.diff and then make. 
+ 
+Now, redo the test: 
+tmp=$(mktemp -d)
+cd $tmp
+touch -d '1918-11-11 11:00 GMT' wwi-armistice-cs35L
+touch now
+sleep 1
+touch now1
+TZ=UTC0 /u/ee/ugrad/gurbir/assignment5/coreutils-with-bug/src/ls -lt --full-time wwi-armistice-35L now now1
+and you should get:
+-rw-r--r-- 1 gurbir eeugrad 0 2020-05-08 08:54:20.259167836 +0000 now1
+-rw-r--r-- 1 gurbir eeugrad 0 2020-05-08 08:54:12.235026963 +0000 now
+-rw-r--r-- 1 gurbir eeugrad 0 1918-11-11 11:00:00.000000000 +0000 wwi-armistice-35L
+
+Now, the date from 1918 is at the bottom like it should be! 
+To test the outcome on the SEASnet servers do the folleoing: 
+cd ~
+touch -d '1918-11-11 11:00 GMT' wwi-armistice-35L
+touch now
+sleep 1
+touch now1
+TZ=UTC0 ls -lt --full-time wwi-armistice now now1
+The outcome is: 
+-rw-r--r-- 1 gurbir eeugrad 0 2054-12-17 17:28:16.000000000 +0000 wwi-armistice-35L
+-rw-r--r-- 1 gurbir eeugrad 0 2020-05-08 21:00:37.718286000 +0000 now1
+-rw-r--r-- 1 gurbir eeugrad 0 2020-05-08 21:00:29.875366000 +0000 now
+
+This means that the SEASnet servers also have a buggy version of timespec_cmp. The error, however, is seemingly different as the date outputted
+ is far into the future and is most likely due to the file writing the date as a 32 bit unsigned integer and reading it as a 32 bit signed integer,
+ which result in integer overflow. 
